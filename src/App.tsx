@@ -17,7 +17,7 @@ enum Screen {
 function App() {
     const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.WELCOME);
     const [score, setScore] = useState<number>(0);
-    // [data , setData ]
+    // const [questions, setQuestions] = useState<Question[]>([]);
 
     let content: React.ReactElement | null = null;
 

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Question {
-    question: string; // När är julafton
-    answers: string[]; // ["24 dec", "8 maj" , "3 jul"]
-    correct: number; // 0
+    question: string;
+    answers: string[];
+    correct: number;
 }
 
 type GameProps = {
@@ -12,69 +12,76 @@ type GameProps = {
 };
 
 const Game = (props: GameProps) => {
-    const questions: Question[] = getQuestions();
-
+    const [questions, setQuestions] = useState<Question[]>([]);
     const [currentQuestion, setCurrentQuestion] = useState<number>(0);
     const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
 
-    const question: Question = questions[currentQuestion];
+    useEffect(() => {
+        fetchQuestions();
+    }, []);
 
-    const options = question.answers.map((answer, index) => (
-        <p key={index}>
-            <label>
-                <input type="radio" name="answers" onClick={() => setSelectedAnswer(index)} />
-                {answer}
-            </label>
-        </p>
-    ));
+    const fetchQuestions = async () => {
+        try {
+            const response = await fetch("https://opentdb.com/api.php?amount=5&type=multiple");
+            const data = await response.json();
+            if (data.response_code === 5) {
+                console.error("The requested number of questions exceeds the number of available questions.");
+            } else if (data.results) {
+                const fetchedQuestions: Question[] = data.results.map((result: any) => {
+                    const question: Question = {
+                        question: result.question,
+                        answers: [...result.incorrect_answers, result.correct_answer],
+                        correct: result.incorrect_answers.length, // Index of correct answer in answers array
+                    };
+                    // Shuffle answers
+                    question.answers.sort(() => Math.random() - 0.5);
+                    return question;
+                });
+                setQuestions(fetchedQuestions);
+            } else {
+                console.error("Unexpected API response:", data);
+            }
+        } catch (error) {
+            console.error("Error fetching questions:", error);
+        }
+    };
+
+    const question: Question | undefined = questions[currentQuestion];
+
+    const options = question
+        ? question.answers.map((answer, index) => (
+              <p key={index}>
+                  <label>
+                      <input type="radio" name="answers" onClick={() => setSelectedAnswer(index)} />
+                      {answer}
+                  </label>
+              </p>
+          ))
+        : null;
 
     const handleDecided = () => {
-        // kolla om rätt
-        if (selectedAnswer == question.correct) {
+        if (selectedAnswer === question?.correct) {
             props.answeredCorrectly();
         }
 
-        // byt fråga
         if (currentQuestion < questions.length - 1) {
             setCurrentQuestion(currentQuestion + 1);
         } else {
-            // gå vidare till result
             props.showResult();
         }
     };
 
     return (
         <section>
-            <h3>{question.question}</h3>
-            {options}
-            <button onClick={handleDecided}>Svara</button>
+            {question && (
+                <>
+                    <h3>{question.question}</h3>
+                    {options}
+                    <button onClick={handleDecided}>Svara</button>
+                </>
+            )}
         </section>
     );
-};
-
-const getQuestions = (): Question[] => {
-    return [
-        {
-            question: "När är Julafton?",
-            answers: ["24 maj", "24 dec", "3 maj"],
-            correct: 1,
-        },
-        {
-            question: "Vad är bäst?",
-            answers: ["javascript", "typescript", "css"],
-            correct: 1,
-        },
-        {
-            question: "Vad är bäst?",
-            answers: ["discord", "zoom", "teams"],
-            correct: 0,
-        },
-        {
-            question: "Vad är bäst?",
-            answers: ["MacOs", "windows", "Linux"],
-            correct: 2,
-        },
-    ];
 };
 
 export default Game;
