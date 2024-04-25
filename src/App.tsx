@@ -1,35 +1,51 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import "./App.css";
+import Welcome from "./assets/Components/Welcome";
+import Game from "./assets/Components/Game";
+import Result from "./assets/Components/Result";
 
-function App() {
-  const [count, setCount] = useState(0)
+// 1. skriv om quiz appen
+// 2. modifiera quiz appen till att använda ett api i stället tex // https://opentdb.com/
+// 3. Bygg ut welcome till år välja kategori att användaren fav frågor osv
 
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+enum Screen {
+    WELCOME = "welcome",
+    GAME = "game",
+    RESULT = "result",
 }
 
-export default App
+function App() {
+    const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.WELCOME);
+    const [score, setScore] = useState<number>(0);
+    // [data , setData ]
+
+    let content: React.ReactElement | null = null;
+
+    useEffect(() => {
+        // let recivedData = fetch()
+        // setData(recivedData)
+    }, []);
+
+    const restartQuiz = () => {
+        setScore(0);
+        setCurrentScreen(Screen.WELCOME);
+    };
+
+    switch (currentScreen) {
+        case Screen.WELCOME:
+            content = <Welcome nextScreen={() => setCurrentScreen(Screen.GAME)} />;
+            break;
+        case Screen.GAME:
+            content = <Game showResult={() => setCurrentScreen(Screen.RESULT)} answeredCorrectly={() => setScore(score + 1)} />;
+            break;
+        case Screen.RESULT:
+            content = <Result score={score} restartQuiz={restartQuiz} />;
+            break;
+        default:
+            content = null;
+    }
+
+    return <>{content}</>;
+}
+
+export default App;
